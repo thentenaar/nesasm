@@ -47,6 +47,7 @@ FILE *lst_fp;	/* listing */
 char  section_name[4][8] = { "  ZP", " BSS", "CODE", "DATA" };
 int   dump_seg;
 int   zero_fill;
+int   out_stdout;
 int   develo_opt;
 int   header_opt;
 int   srec_opt;
@@ -107,9 +108,7 @@ main(int argc, char **argv)
 	mx_opt = 0;
 	file = 0;
 	zero_fill = 0;
-
-	/* display assembler version message */
-    printf("%s\n\n", machine->asm_title);
+	out_stdout = 0;
 
 	/* parse command line */
 	if (argc > 1) {
@@ -129,6 +128,9 @@ main(int argc, char **argv)
 					zero_fill = 1;
 					dump_seg  = 0;
 				}
+
+				/* output to stdout */
+				else if (!strcmp(argv[i],"-O")) out_stdout = 1;
 
 				/* forces macros expansion */
 				else if (!strcmp(argv[i], "-m"))
@@ -218,6 +220,9 @@ main(int argc, char **argv)
 	   *p = '.';
 	else
 		strcat(in_fname, ".asm");
+
+	/* display assembler version message */
+	if (!out_stdout) printf("%s\n\n", machine->asm_title);
 
 	/* init include path */
 	init_path();
@@ -337,7 +342,7 @@ main(int argc, char **argv)
 		bank_loccnt[S_DATA][0x00]    = 0x0000;
 
 		/* pass message */
-		printf("pass %i\n", pass + 1);
+		if (!out_stdout) printf("pass %i\n", pass + 1);
 
 		/* assemble */
 		while (readline() != -1) {
@@ -478,7 +483,8 @@ main(int argc, char **argv)
 			/* binary file */
 			else {
 				/* open file */
-				if ((fp = fopen(bin_fname, "wb")) == NULL) {
+				if (out_stdout) fp = stdout;
+				else if ((fp = fopen(bin_fname, "wb")) == NULL) {
 					printf("Can not open binary file '%s'!\n", bin_fname);
 					exit(1);
 				}
@@ -561,6 +567,7 @@ help(void)
 
 	/* display help */
 	printf("%s [-options] [-? (for help)] infile\n\n", prg_name);
+	printf("-O     : write output to stdout (for binary files only)\n");
 	printf("-s/S   : show segment usage\n");
 	printf("-l #   : listing file output level (0-3)\n");
 	printf("-m     : force macro expansion in listing\n");
