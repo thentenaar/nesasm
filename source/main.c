@@ -46,6 +46,7 @@ FILE *in_fp;	/* file pointers, input */
 FILE *lst_fp;	/* listing */
 char  section_name[4][8] = { "  ZP", " BSS", "CODE", "DATA" };
 int   dump_seg;
+int   zero_fill;
 int   develo_opt;
 int   header_opt;
 int   srec_opt;
@@ -105,6 +106,7 @@ main(int argc, char **argv)
 	cd_opt = 0;
 	mx_opt = 0;
 	file = 0;
+	zero_fill = 0;
 
 	/* display assembler version message */
     printf("%s\n\n", machine->asm_title);
@@ -118,6 +120,15 @@ main(int argc, char **argv)
 					dump_seg = 1;
 				else if (!strcmp(argv[i], "-S"))
 					dump_seg = 2;
+
+				/* zero fill
+				 * (this makes the segment dump information
+				 * inaccurate)
+				 */
+				if (!strcmp(argv[i],"-z")) {
+					zero_fill = 1;
+					dump_seg  = 0;
+				}
 
 				/* forces macros expansion */
 				else if (!strcmp(argv[i], "-m"))
@@ -221,8 +232,8 @@ main(int argc, char **argv)
 	}
 
 	/* clear the ROM array */
-	memset(rom, 0xFF, 8192 * 128);
-	memset(map, 0xFF, 8192 * 128);
+	memset(rom, zero_fill ? 0 : 0xff, 8192 * 128);
+	memset(map, zero_fill ? 0 : 0xff, 8192 * 128);
 
 	/* clear symbol hash tables */
 	for (i = 0; i < 256; i++) {
@@ -561,6 +572,8 @@ help(void)
 		printf("-mx    : create a Develo MX file\n");
 	}
 	printf("-srec  : create a Motorola S-record file\n");
+	printf("-z     : fill unused space in ROM with zeroes\n");
+	printf("         NOTE: Makes segment usage information inaccurate\n");
 	printf("infile : file to be assembled\n");
 }
 
